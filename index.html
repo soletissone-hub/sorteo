@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Sorteo en vivo</title>
+<title>Live Raffle</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
@@ -73,50 +73,50 @@ textarea{position:absolute;left:-9999px}
 <div class="wrap">
   <div class="stack">
     <div class="card qr">
-      <h1 id="titulo">Sorteo <span>en vivo</span></h1>
-      <canvas id="qr" width="340" height="340" aria-label="Código QR del formulario"></canvas>
-      <div class="cta">Escaneá y participá</div>
-      <div class="link" id="formUrl">cargando…</div>
-      <div class="counter"><b id="count">–</b><span class="muted">inscriptos</span></div>
+      <h1 id="titulo">Live <span>Raffle</span></h1>
+      <canvas id="qr" width="340" height="340" aria-label="Sign-up form QR code"></canvas>
+      <div class="cta">Scan to enter</div>
+      <div class="link" id="formUrl">loading…</div>
+      <div class="counter"><b id="count">–</b><span class="muted">entries</span></div>
       <div class="row" style="justify-content:center">
         <span class="pill" id="estado">…</span>
-        <span class="pill" id="upd"><span class="dot"></span>en vivo</span>
+        <span class="pill" id="upd"><span class="dot"></span>live</span>
       </div>
       <div class="row" style="justify-content:center">
-        <a class="btn" id="dlQr" download="qr-sorteo.png">Descargar QR</a>
-        <button id="toggle">Cerrar inscripción</button>
+        <a class="btn" id="dlQr" download="qr-sorteo.png">Download QR</a>
+        <button id="toggle">Close entries</button>
       </div>
     </div>
   </div>
 
   <div class="stack">
     <div class="card">
-      <h2>Sortear</h2>
+      <h2>Draw</h2>
       <div id="err" class="err" hidden></div>
       <div class="drum" id="drum" aria-live="polite">
-        <div class="name" id="drumName">Listo para sortear</div>
-        <div class="meta" id="drumMeta">esperando inscriptos</div>
+        <div class="name" id="drumName">Ready to draw</div>
+        <div class="meta" id="drumMeta">waiting for entries</div>
       </div>
       <div class="row">
-        <label for="howMany" class="muted">Ganadores</label>
+        <label for="howMany" class="muted">Winners</label>
         <input type="number" id="howMany" min="1" value="1">
-        <label for="suplentes" class="muted">Suplentes</label>
+        <label for="suplentes" class="muted">Alternates</label>
         <input type="number" id="suplentes" min="0" value="0">
-        <button class="primary" id="draw" disabled>Sortear</button>
+        <button class="primary" id="draw" disabled>Draw</button>
       </div>
-      <label class="check"><input type="checkbox" id="exclude" checked> No volver a sortear a quienes ya ganaron</label>
+      <label class="check"><input type="checkbox" id="exclude" checked> Don’t draw past winners again</label>
       <div id="winWrap" hidden style="display:flex;flex-direction:column;gap:10px">
-        <h3>Resultado</h3>
+        <h3>Results</h3>
         <ul class="winners" id="winners"></ul>
-        <div class="row"><button id="copyWin">Copiar resultado</button><button id="resetWin">Reiniciar ganadores</button></div>
+        <div class="row"><button id="copyWin">Copy results</button><button id="resetWin">Reset winners</button></div>
       </div>
     </div>
 
     <div class="card">
       <div class="row" style="justify-content:space-between">
-        <h3>Inscriptos</h3><span class="pill" id="dupes" hidden></span>
+        <h3>Entries</h3><span class="pill" id="dupes" hidden></span>
       </div>
-      <div class="list-wrap"><table><thead><tr><th>#</th><th>Nombre</th></tr></thead><tbody id="tbody"></tbody></table></div>
+      <div class="list-wrap"><table><thead><tr><th>#</th><th>Name</th></tr></thead><tbody id="tbody"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -133,9 +133,9 @@ textarea{position:absolute;left:-9999px}
   const K = new URLSearchParams(location.search).get("k") || "";
   const ACC = { getDatos: () => "datos", getFilas: () => "filas", setAbierto: a => a ? "abrir" : "cerrar" };
   const run = async (fn, ...args) => {
-    if(!K) throw new Error("Falta la clave en el link. Usá el link completo del sorteo.");
+    if(!K) throw new Error("The link is missing its key. Use the full raffle link.");
     const r = await fetch(`${EXEC}?api=1&accion=${ACC[fn](...args)}&k=${encodeURIComponent(K)}`, {credentials:"omit"});
-    let j; try{ j = await r.json(); }catch(e){ throw new Error("Link incorrecto o sin conexión."); }
+    let j; try{ j = await r.json(); }catch(e){ throw new Error("Wrong link or no connection."); }
     if(j.error) throw new Error(j.error);
     return j.data;
   };
@@ -177,13 +177,13 @@ textarea{position:absolute;left:-9999px}
     const {list, d} = parse(rows);
     const changed = first || list.length !== people.length || d !== dupes; first = false;
     people = list; dupes = d;
-    $("upd").innerHTML = `<span class="dot"></span>actualizado ${new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
+    $("upd").innerHTML = `<span class="dot"></span>updated ${new Date().toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
     if(changed) render();
   }
   function eligible(){ return $("exclude").checked ? people.filter(p => !past.has(p.key)) : people.slice(); }
   function render(){
     $("count").textContent = people.length;
-    $("dupes").hidden = !dupes; $("dupes").textContent = `${dupes} repetido${dupes>1?"s":""} descartado${dupes>1?"s":""}`;
+    $("dupes").hidden = !dupes; $("dupes").textContent = `${dupes} duplicate${dupes>1?"s":""} removed`;
     const tb = $("tbody"); tb.innerHTML = "";
     people.slice().reverse().forEach((p, i) => {
       const tr = document.createElement("tr");
@@ -193,14 +193,14 @@ textarea{position:absolute;left:-9999px}
     });
     if(!drawing){
       $("draw").disabled = !eligible().length;
-      if(!$("drum").classList.contains("win")) $("drumMeta").textContent = people.length ? `${eligible().length} en el bolillero` : "esperando inscriptos";
+      if(!$("drum").classList.contains("win")) $("drumMeta").textContent = people.length ? `${eligible().length} in the draw` : "waiting for entries";
     }
   }
   function setEstado(a){
     abierto = a;
     $("estado").className = "pill " + (a ? "ok" : "off");
-    $("estado").textContent = a ? "Inscripción abierta" : "Inscripción cerrada";
-    $("toggle").textContent = a ? "Cerrar inscripción" : "Reabrir inscripción";
+    $("estado").textContent = a ? "Entries open" : "Entries closed";
+    $("toggle").textContent = a ? "Close entries" : "Reopen entries";
   }
   function showErr(e){ $("err").hidden = false; $("err").textContent = (e && e.message) || String(e); }
 
@@ -228,19 +228,19 @@ textarea{position:absolute;left:-9999px}
     const d = $("drum");
     for(let k=0;k<picked.length;k++){
       d.classList.remove("win"); d.classList.add("spin");
-      const label = k < nW ? `ganador ${k+1} de ${nW}` : `suplente ${k-nW+1} de ${total-nW}`;
+      const label = k < nW ? `winner ${k+1} of ${nW}` : `alternate ${k-nW+1} of ${total-nW}`;
       if(!reduce) for(let s=0;s<28;s++){
         $("drumName").textContent = pool[rnd(pool.length)].nombre;
-        $("drumMeta").textContent = "sorteando " + label;
+        $("drumMeta").textContent = "drawing " + label;
         await wait(40 + s*s*0.55);
       }
       const w = picked[k];
       d.classList.remove("spin"); d.classList.add("win");
       $("drumName").textContent = w.nombre || w.mail;
-      $("drumMeta").textContent = label.toUpperCase().replace(/ DE \d+$/, "");
+      $("drumMeta").textContent = label.toUpperCase().replace(/ OF \d+$/, "");
       if(k < picked.length - 1) await wait(reduce ? 300 : 1400);
     }
-    winners = picked.map((p,i) => ({...p, rol: i < nW ? `Ganador ${i+1}` : `Suplente ${i-nW+1}`}));
+    winners = picked.map((p,i) => ({...p, rol: i < nW ? `Winner ${i+1}` : `Alternate ${i-nW+1}`}));
     picked.forEach(p => past.add(p.key)); ls.set("sorteo.past", [...past]);
     const ul = $("winners"); ul.innerHTML = "";
     winners.forEach(w => {
@@ -249,8 +249,8 @@ textarea{position:absolute;left:-9999px}
       li.children[0].textContent = w.rol; li.children[1].textContent = w.nombre;
       ul.appendChild(li);
     });
-    const stamp = new Date().toLocaleString("es-MX",{dateStyle:"short",timeStyle:"short"});
-    $("copyWin").dataset.text = `Sorteo ${stamp} — ${pool.length} participantes\n` + winners.map(w => `${w.rol}: ${w.nombre}`).join("\n");
+    const stamp = new Date().toLocaleString("en-US",{dateStyle:"short",timeStyle:"short"});
+    $("copyWin").dataset.text = `Raffle ${stamp} — ${pool.length} entries\n` + winners.map(w => `${w.rol}: ${w.nombre}`).join("\n");
     $("winWrap").hidden = false;
     drawing = false; render();
   });
@@ -259,18 +259,17 @@ textarea{position:absolute;left:-9999px}
     const t = $("copyWin").dataset.text || "";
     try{ await navigator.clipboard.writeText(t); }
     catch(e){ const c = $("clip"); c.value = t; c.select(); document.execCommand("copy"); }
-    $("copyWin").textContent = "Copiado"; setTimeout(() => $("copyWin").textContent = "Copiar resultado", 2000);
+    $("copyWin").textContent = "Copied"; setTimeout(() => $("copyWin").textContent = "Copy results", 2000);
   });
   $("resetWin").addEventListener("click", () => {
     past = new Set(); winners = []; ls.set("sorteo.past", []);
     $("winWrap").hidden = true; $("drum").classList.remove("win");
-    $("drumName").textContent = "Listo para sortear"; render();
+    $("drumName").textContent = "Ready to draw"; render();
   });
 
   /* Arranque + actualización en vivo */
   run("getDatos").then(d => {
-    $("titulo").innerHTML = ""; $("titulo").append(d.titulo + " "); const s = document.createElement("span"); s.textContent = "en vivo"; $("titulo").append(s);
-    $("formUrl").textContent = d.formUrl; drawQR(d.formUrl); setEstado(d.abierto); setRows(d.filas);
+        $("formUrl").textContent = d.formUrl; drawQR(d.formUrl); setEstado(d.abierto); setRows(d.filas);
     setInterval(() => { if(!drawing) run("getFilas").then(setRows).catch(() => {}); }, 8000);
   }).catch(showErr);
 })();
