@@ -61,6 +61,7 @@ th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white
 th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);position:sticky;top:0;background:var(--surface)}
 td.n{font-family:var(--mono);color:var(--muted)}
 tr.won td{background:var(--soft)}
+table.nocontact .c{display:none}
 .check{display:flex;gap:8px;align-items:center;font-size:14px}
 .err{background:var(--soft);color:var(--accent);border-radius:10px;padding:12px 14px;font-weight:600}
 .stack{display:flex;flex-direction:column;gap:20px}
@@ -115,7 +116,7 @@ textarea{position:absolute;left:-9999px}
       <div class="row" style="justify-content:space-between">
         <h3>Inscriptos</h3><span class="pill" id="dupes" hidden></span>
       </div>
-      <div class="list-wrap"><table><thead><tr><th>#</th><th>Nombre</th><th>Teléfono</th><th>Mail</th></tr></thead><tbody id="tbody"></tbody></table></div>
+      <div class="list-wrap"><table><thead><tr><th>#</th><th>Nombre</th><th class="c">Teléfono</th><th class="c">Mail</th></tr></thead><tbody id="tbody"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -184,10 +185,11 @@ textarea{position:absolute;left:-9999px}
     $("count").textContent = people.length;
     $("dupes").hidden = !dupes; $("dupes").textContent = `${dupes} repetido${dupes>1?"s":""} descartado${dupes>1?"s":""}`;
     const tb = $("tbody"); tb.innerHTML = "";
+    tb.closest("table").classList.toggle("nocontact", !people.some(p => p.tel || p.mail));
     people.slice().reverse().forEach((p, i) => {
       const tr = document.createElement("tr");
       if(past.has(p.key)) tr.className = "won";
-      [String(people.length - i), p.nombre, p.tel, p.mail].forEach((v,j) => { const td = document.createElement("td"); td.textContent = v; if(!j) td.className = "n"; tr.appendChild(td); });
+      [String(people.length - i), p.nombre, p.tel, p.mail].forEach((v,j) => { const td = document.createElement("td"); td.textContent = v; if(!j) td.className = "n"; if(j>1) td.classList.add("c"); tr.appendChild(td); });
       tb.appendChild(tr);
     });
     if(!drawing){
