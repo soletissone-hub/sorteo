@@ -116,7 +116,7 @@ textarea{position:absolute;left:-9999px}
       <div class="row" style="justify-content:space-between">
         <h3>Inscriptos</h3><span class="pill" id="dupes" hidden></span>
       </div>
-      <div class="list-wrap"><table><thead><tr><th>#</th><th>Nombre</th><th class="c">Teléfono</th><th class="c">Mail</th></tr></thead><tbody id="tbody"></tbody></table></div>
+      <div class="list-wrap"><table><thead><tr><th>#</th><th>Nombre</th></tr></thead><tbody id="tbody"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -185,11 +185,10 @@ textarea{position:absolute;left:-9999px}
     $("count").textContent = people.length;
     $("dupes").hidden = !dupes; $("dupes").textContent = `${dupes} repetido${dupes>1?"s":""} descartado${dupes>1?"s":""}`;
     const tb = $("tbody"); tb.innerHTML = "";
-    tb.closest("table").classList.toggle("nocontact", !people.some(p => p.tel || p.mail));
     people.slice().reverse().forEach((p, i) => {
       const tr = document.createElement("tr");
       if(past.has(p.key)) tr.className = "won";
-      [String(people.length - i), p.nombre, p.tel, p.mail].forEach((v,j) => { const td = document.createElement("td"); td.textContent = v; if(!j) td.className = "n"; if(j>1) td.classList.add("c"); tr.appendChild(td); });
+      [String(people.length - i), p.nombre].forEach((v,j) => { const td = document.createElement("td"); td.textContent = v; if(!j) td.className = "n"; if(j>1) td.classList.add("c"); tr.appendChild(td); });
       tb.appendChild(tr);
     });
     if(!drawing){
@@ -246,13 +245,12 @@ textarea{position:absolute;left:-9999px}
     const ul = $("winners"); ul.innerHTML = "";
     winners.forEach(w => {
       const li = document.createElement("li");
-      li.innerHTML = "<span class='pos'></span><b></b><small></small>";
+      li.innerHTML = "<span class='pos'></span><b></b>";
       li.children[0].textContent = w.rol; li.children[1].textContent = w.nombre;
-      li.children[2].textContent = [w.tel, w.mail].filter(Boolean).join(" · ");
       ul.appendChild(li);
     });
     const stamp = new Date().toLocaleString("es-MX",{dateStyle:"short",timeStyle:"short"});
-    $("copyWin").dataset.text = `Sorteo ${stamp} — ${pool.length} participantes\n` + winners.map(w => `${w.rol}: ${w.nombre} | ${w.tel} | ${w.mail}`).join("\n");
+    $("copyWin").dataset.text = `Sorteo ${stamp} — ${pool.length} participantes\n` + winners.map(w => `${w.rol}: ${w.nombre}`).join("\n");
     $("winWrap").hidden = false;
     drawing = false; render();
   });
