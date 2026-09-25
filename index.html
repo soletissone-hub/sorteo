@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sorteo en vivo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#EDF0F5; --surface:#FFFFFF; --ink:#16223B; --muted:#5B6680; --line:#D5DAE4;
+  --accent:#E4572E; --soft:#FBE3DA; --ok:#1F8A5B; --ok-soft:#DDF2E8;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;padding:24px 16px 48px}
+.wrap{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;align-items:start}
+@media (max-width:820px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(30px,4.5vw,46px);line-height:1;margin:0;letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+h2{font-family:var(--display);font-weight:800;font-size:22px;margin:0}
+h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin:0;color:var(--muted)}
+p{margin:0}
+.muted{color:var(--muted)}
+.qr{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.qr canvas{width:100%;max-width:340px;height:auto;image-rendering:pixelated;border-radius:8px}
+.qr .cta{font-family:var(--display);font-weight:800;font-size:24px}
+.link{font-family:var(--mono);font-size:13px;word-break:break-all;color:var(--muted)}
+.counter{display:flex;align-items:baseline;gap:10px;justify-content:center}
+.counter b{font-family:var(--display);font-size:56px;line-height:1;font-variant-numeric:tabular-nums}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button,.btn{font:inherit;font-weight:600;border-radius:9px;padding:10px 16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+button:hover,.btn:hover{border-color:var(--ink)}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-size:17px;padding:12px 26px}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,.btn:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=number]{font:inherit;width:78px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)}
+.pill{font-size:13px;font-weight:600;border-radius:999px;padding:4px 11px;background:var(--bg);border:1px solid var(--line)}
+.pill.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.pill.off{background:var(--soft);color:var(--accent);border-color:transparent}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.drum{border:2px dashed var(--line);border-radius:14px;min-height:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;text-align:center}
+.drum .name{font-family:var(--display);font-weight:800;font-size:clamp(30px,5vw,50px);line-height:1.05}
+.drum .meta{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.drum.win{border-color:var(--accent);background:var(--soft)}
+.drum.spin .name{color:var(--muted)}
+.winners{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.winners li{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:10px 12px}
+.winners b{font-family:var(--display);font-size:18px}
+.winners .pos{font-family:var(--mono);color:var(--accent);font-weight:700}
+.winners small{font-family:var(--mono);color:var(--muted)}
+.list-wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;max-height:300px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);position:sticky;top:0;background:var(--surface)}
+td.n{font-family:var(--mono);color:var(--muted)}
+tr.won td{background:var(--soft)}
+.check{display:flex;gap:8px;align-items:center;font-size:14px}
+.err{background:var(--soft);color:var(--accent);border-radius:10px;padding:12px 14px;font-weight:600}
+.stack{display:flex;flex-direction:column;gap:20px}
+textarea{position:absolute;left:-9999px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stack">
+    <div class="card qr">
+      <h1 id="titulo">Sorteo <span>en vivo</span></h1>
+      <canvas id="qr" width="340" height="340" aria-label="Código QR del formulario"></canvas>
+      <div class="cta">Escaneá y participá</div>
+      <div class="link" id="formUrl">cargando…</div>
+      <div class="counter"><b id="count">–</b><span class="muted">inscriptos</span></div>
+      <div class="row" style="justify-content:center">
+        <span class="pill" id="estado">…</span>
+        <span class="pill" id="upd"><span class="dot"></span>en vivo</span>
+      </div>
+      <div class="row" style="justify-content:center">
+        <a class="btn" id="dlQr" download="qr-sorteo.png">Descargar QR</a>
+        <button id="toggle">Cerrar inscripción</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="card">
+      <h2>Sortear</h2>
+      <div id="err" class="err" hidden></div>
+      <div class="drum" id="drum" aria-live="polite">
+        <div class="name" id="drumName">Listo para sortear</div>
+        <div class="meta" id="drumMeta">esperando inscriptos</div>
+      </div>
+      <div class="row">
+        <label for="howMany" class="muted">Ganadores</label>
+        <input type="number" id="howMany" min="1" value="1">
+        <label for="suplentes" class="muted">Suplentes</label>
+        <input type="number" id="suplentes" min="0" value="0">
+        <button class="primary" id="draw" disabled>Sortear</button>
+      </div>
+      <label class="check"><input type="checkbox" id="exclude" checked> No volver a sortear a quienes ya ganaron</label>
+      <div id="winWrap" hidden style="display:flex;flex-direction:column;gap:10px">
+        <h3>Resultado</h3>
+        <ul class="winners" id="winners"></ul>
+        <div class="row"><button id="copyWin">Copiar resultado</button><button id="resetWin">Reiniciar ganadores</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h3>Inscriptos</h3><span class="pill" id="dupes" hidden></span>
+      </div>
+      <div class="list-wrap"><table><thead><tr><th>#</th><th>Nombre</th><th>Teléfono</th><th>Mail</th></tr></thead><tbody id="tbody"></tbody></table></div>
+    </div>
+  </div>
+</div>
+<textarea id="clip" aria-hidden="true"></textarea>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const ls = {
+    get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } },
+    set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  };
+  const EXEC = "https://script.google.com/macros/s/AKfycbyqhdtwR3FuWA_imJf3p8PoHGWJk5MUz-PTBwwwYHWO28nIdxGX0kkgoyCqPe4CqDIDOw/exec";
+  const K = new URLSearchParams(location.search).get("k") || "";
+  const ACC = { getDatos: () => "datos", getFilas: () => "filas", setAbierto: a => a ? "abrir" : "cerrar" };
+  const run = async (fn, ...args) => {
+    if(!K) throw new Error("Falta la clave en el link. Usá el link completo del sorteo.");
+    const r = await fetch(`${EXEC}?api=1&accion=${ACC[fn](...args)}&k=${encodeURIComponent(K)}`, {credentials:"omit"});
+    let j; try{ j = await r.json(); }catch(e){ throw new Error("Link incorrecto o sin conexión."); }
+    if(j.error) throw new Error(j.error);
+    return j.data;
+  };
+
+  let people = [], dupes = 0, winners = [], past = new Set(ls.get("sorteo.past") || []), abierto = true, drawing = false, first = true;
+
+  /* QR */
+  function drawQR(url){
+    const q = qrcode(0, "M"); q.addData(url); q.make();
+    const n = q.getModuleCount(), cell = Math.max(8, Math.floor(1000/(n+8))), size = cell*(n+8);
+    const c = $("qr"); c.width = size; c.height = size;
+    const x = c.getContext("2d");
+    x.fillStyle = "#fff"; x.fillRect(0,0,size,size); x.fillStyle = "#16223B";
+    for(let r=0;r<n;r++) for(let k=0;k<n;k++) if(q.isDark(r,k)) x.fillRect((k+4)*cell,(r+4)*cell,cell,cell);
+    $("dlQr").href = c.toDataURL("image/png");
+  }
+
+  /* Participantes */
+  const norm = s => (s||"").toString().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+  const col = (h, keys) => h.findIndex(x => keys.some(k => norm(x).includes(k)));
+  function parse(rows){
+    rows = (rows||[]).filter(r => r.some(c => (c||"").trim()));
+    if(rows.length < 2) return {list:[], d:0};
+    const h = rows[0];
+    let iN = col(h,["nombre","name"]), iA = col(h,["apellido","surname"]), iT = col(h,["tel","cel","whats","movil","phone"]), iM = col(h,["mail","correo"]);
+    if(iA === iN) iA = -1;
+    const seen = new Set(), list = []; let d = 0;
+    rows.slice(1).forEach(r => {
+      const g = i => i>=0 ? (r[i]||"").trim() : "";
+      const p = { nombre: [g(iN), g(iA)].filter(Boolean).join(" "), tel: g(iT), mail: g(iM) };
+      if(!p.nombre && !p.mail && !p.tel) return;
+      const key = p.mail ? "m:"+p.mail.toLowerCase() : p.tel ? "t:"+p.tel.replace(/\D/g,"") : "n:"+norm(p.nombre);
+      if(seen.has(key)){ d++; return; }
+      seen.add(key); p.key = key; list.push(p);
+    });
+    return {list, d};
+  }
+  function setRows(rows){
+    const {list, d} = parse(rows);
+    const changed = first || list.length !== people.length || d !== dupes; first = false;
+    people = list; dupes = d;
+    $("upd").innerHTML = `<span class="dot"></span>actualizado ${new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
+    if(changed) render();
+  }
+  function eligible(){ return $("exclude").checked ? people.filter(p => !past.has(p.key)) : people.slice(); }
+  function render(){
+    $("count").textContent = people.length;
+    $("dupes").hidden = !dupes; $("dupes").textContent = `${dupes} repetido${dupes>1?"s":""} descartado${dupes>1?"s":""}`;
+    const tb = $("tbody"); tb.innerHTML = "";
+    people.slice().reverse().forEach((p, i) => {
+      const tr = document.createElement("tr");
+      if(past.has(p.key)) tr.className = "won";
+      [String(people.length - i), p.nombre, p.tel, p.mail].forEach((v,j) => { const td = document.createElement("td"); td.textContent = v; if(!j) td.className = "n"; tr.appendChild(td); });
+      tb.appendChild(tr);
+    });
+    if(!drawing){
+      $("draw").disabled = !eligible().length;
+      if(!$("drum").classList.contains("win")) $("drumMeta").textContent = people.length ? `${eligible().length} en el bolillero` : "esperando inscriptos";
+    }
+  }
+  function setEstado(a){
+    abierto = a;
+    $("estado").className = "pill " + (a ? "ok" : "off");
+    $("estado").textContent = a ? "Inscripción abierta" : "Inscripción cerrada";
+    $("toggle").textContent = a ? "Cerrar inscripción" : "Reabrir inscripción";
+  }
+  function showErr(e){ $("err").hidden = false; $("err").textContent = (e && e.message) || String(e); }
+
+  $("toggle").addEventListener("click", async () => {
+    $("toggle").disabled = true;
+    try{ setEstado(await run("setAbierto", !abierto)); }catch(e){ showErr(e); }
+    $("toggle").disabled = false;
+  });
+  $("exclude").addEventListener("change", render);
+
+  /* Sorteo */
+  function rnd(n){ const a = new Uint32Array(1), lim = Math.floor(0xFFFFFFFF/n)*n; let v; do{ crypto.getRandomValues(a); v = a[0]; } while(v >= lim); return v % n; }
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  $("draw").addEventListener("click", async () => {
+    const pool = eligible();
+    const nW = Math.max(1, parseInt($("howMany").value)||1), nS = Math.max(0, parseInt($("suplentes").value)||0);
+    const total = Math.min(pool.length, nW + nS);
+    if(!total) return;
+    const arr = pool.slice();
+    for(let i=0;i<total;i++){ const j = i + rnd(arr.length - i); [arr[i],arr[j]] = [arr[j],arr[i]]; }
+    const picked = arr.slice(0, total);
+    drawing = true; $("draw").disabled = true;
+    const d = $("drum");
+    for(let k=0;k<picked.length;k++){
+      d.classList.remove("win"); d.classList.add("spin");
+      const label = k < nW ? `ganador ${k+1} de ${nW}` : `suplente ${k-nW+1} de ${total-nW}`;
+      if(!reduce) for(let s=0;s<28;s++){
+        $("drumName").textContent = pool[rnd(pool.length)].nombre;
+        $("drumMeta").textContent = "sorteando " + label;
+        await wait(40 + s*s*0.55);
+      }
+      const w = picked[k];
+      d.classList.remove("spin"); d.classList.add("win");
+      $("drumName").textContent = w.nombre || w.mail;
+      $("drumMeta").textContent = label.toUpperCase().replace(/ DE \d+$/, "");
+      if(k < picked.length - 1) await wait(reduce ? 300 : 1400);
+    }
+    winners = picked.map((p,i) => ({...p, rol: i < nW ? `Ganador ${i+1}` : `Suplente ${i-nW+1}`}));
+    picked.forEach(p => past.add(p.key)); ls.set("sorteo.past", [...past]);
+    const ul = $("winners"); ul.innerHTML = "";
+    winners.forEach(w => {
+      const li = document.createElement("li");
+      li.innerHTML = "<span class='pos'></span><b></b><small></small>";
+      li.children[0].textContent = w.rol; li.children[1].textContent = w.nombre;
+      li.children[2].textContent = [w.tel, w.mail].filter(Boolean).join(" · ");
+      ul.appendChild(li);
+    });
+    const stamp = new Date().toLocaleString("es-MX",{dateStyle:"short",timeStyle:"short"});
+    $("copyWin").dataset.text = `Sorteo ${stamp} — ${pool.length} participantes\n` + winners.map(w => `${w.rol}: ${w.nombre} | ${w.tel} | ${w.mail}`).join("\n");
+    $("winWrap").hidden = false;
+    drawing = false; render();
+  });
+
+  $("copyWin").addEventListener("click", async () => {
+    const t = $("copyWin").dataset.text || "";
+    try{ await navigator.clipboard.writeText(t); }
+    catch(e){ const c = $("clip"); c.value = t; c.select(); document.execCommand("copy"); }
+    $("copyWin").textContent = "Copiado"; setTimeout(() => $("copyWin").textContent = "Copiar resultado", 2000);
+  });
+  $("resetWin").addEventListener("click", () => {
+    past = new Set(); winners = []; ls.set("sorteo.past", []);
+    $("winWrap").hidden = true; $("drum").classList.remove("win");
+    $("drumName").textContent = "Listo para sortear"; render();
+  });
+
+  /* Arranque + actualización en vivo */
+  run("getDatos").then(d => {
+    $("titulo").innerHTML = ""; $("titulo").append(d.titulo + " "); const s = document.createElement("span"); s.textContent = "en vivo"; $("titulo").append(s);
+    $("formUrl").textContent = d.formUrl; drawQR(d.formUrl); setEstado(d.abierto); setRows(d.filas);
+    setInterval(() => { if(!drawing) run("getFilas").then(setRows).catch(() => {}); }, 8000);
+  }).catch(showErr);
+})();
+</script>
+</body>
+</html>
