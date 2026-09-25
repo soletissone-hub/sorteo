@@ -177,7 +177,7 @@ textarea{position:absolute;left:-9999px}
     const {list, d} = parse(rows);
     const changed = first || list.length !== people.length || d !== dupes; first = false;
     people = list; dupes = d;
-    $("upd").innerHTML = `<span class="dot"></span>updated ${new Date().toLocaleTimeString("en-US",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
+    $("upd").innerHTML = `<span class="dot"></span>updated ${new Date().toLocaleTimeString("en-US",{timeZone:"America/New_York",timeZoneName:"short",hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
     if(changed) render();
   }
   function eligible(){ return $("exclude").checked ? people.filter(p => !past.has(p.key)) : people.slice(); }
@@ -249,7 +249,7 @@ textarea{position:absolute;left:-9999px}
       li.children[0].textContent = w.rol; li.children[1].textContent = w.nombre;
       ul.appendChild(li);
     });
-    const stamp = new Date().toLocaleString("en-US",{dateStyle:"short",timeStyle:"short"});
+    const stamp = new Date().toLocaleString("en-US",{timeZone:"America/New_York",timeZoneName:"short",dateStyle:"short",timeStyle:"short"});
     $("copyWin").dataset.text = `Raffle ${stamp} — ${pool.length} entries\n` + winners.map(w => `${w.rol}: ${w.nombre}`).join("\n");
     $("winWrap").hidden = false;
     drawing = false; render();
