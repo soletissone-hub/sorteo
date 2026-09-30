@@ -39,6 +39,7 @@ button:hover,.btn:hover{border-color:var(--ink)}
 button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-size:17px;padding:12px 26px}
 button:disabled{opacity:.45;cursor:not-allowed}
 button:focus-visible,.btn:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+select{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)}
 input[type=number]{font:inherit;width:78px;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)}
 .pill{font-size:13px;font-weight:600;border-radius:999px;padding:4px 11px;background:var(--bg);border:1px solid var(--line)}
 .pill.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
@@ -91,7 +92,7 @@ textarea{position:absolute;left:-9999px}
 
   <div class="stack">
     <div class="card">
-      <h2>Draw</h2>
+      <div class="row" style="justify-content:space-between"><h2>Draw</h2><label class="check" for="evento">Event <select id="evento"></select></label></div>
       <div id="err" class="err" hidden></div>
       <div class="drum" id="drum" aria-live="polite">
         <div class="name" id="drumName">Ready to draw</div>
@@ -140,7 +141,7 @@ textarea{position:absolute;left:-9999px}
     return j.data;
   };
 
-  let people = [], dupes = 0, winners = [], past = new Set(ls.get("sorteo.past") || []), abierto = true, drawing = false, first = true;
+  let people = [], dupes = 0, winners = [], past = new Set(), abierto = true, drawing = false, first = true, curEvent = null;
 
   /* QR */
   function drawQR(url){
@@ -167,24 +168,46 @@ textarea{position:absolute;left:-9999px}
   };
   function parse(rows){
     rows = (rows||[]).filter(r => r.some(c => (c||"").trim()));
+    days = {};
     if(rows.length < 2) return {list:[], d:0};
     ROWS = rows;
     const h = rows[0];
     let iN = col(h,["nombre","name"]), iA = col(h,["apellido","surname"]), iT = col(h,["tel","cel","whats","movil","phone"]), iM = col(h,["mail","correo"]);
     if(iA === iN) iA = -1;
+    const iD = col(h,["timestamp","marca temporal"]);
+    const sel = $("evento").value;
     const seen = new Set(), list = []; let d = 0;
     rows.slice(1).forEach(r => {
       const g = i => i>=0 ? (r[i]||"").trim() : "";
-      const p = { nombre: [g(iN), g(iA)].filter(Boolean).join(" "), tel: g(iT), mail: g(iM) };
+      const p = { nombre: [g(iN), g(iA)].filter(Boolean).join(" "), tel: g(iT), mail: g(iM), day: (g(iD).split(" ")[0] || "") };
       if(!p.nombre && !p.mail && !p.tel) return;
+      days[p.day] = (days[p.day] || 0) + 1;
+      if(sel && sel !== "all" && p.day !== sel) return;
       const key = p.mail ? "m:"+p.mail.toLowerCase() : p.tel ? "t:"+p.tel.replace(/\D/g,"") : "n:"+norm(p.nombre);
       if(seen.has(key)){ d++; return; }
       seen.add(key); p.key = key; list.push(p);
     });
     return {list, d};
   }
+  let days = {}, lastRows = [];
+  const dayLabel = d => { const m = d.split("/"); if(m.length < 3) return d || "No date"; return new Date(+m[2], m[0]-1, +m[1]).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"}); };
+  const dayVal = d => { const m = d.split("/"); return m.length < 3 ? 0 : +m[2]*10000 + +m[0]*100 + +m[1]; };
+  function fillEvents(){
+    const s = $("evento"), cur = s.value;
+    const ds = Object.keys(days).sort((a,b) => dayVal(b) - dayVal(a));
+    const sig = ds.map(d => d + days[d]).join("|");
+    if(s.dataset.sig === sig) return;
+    s.dataset.sig = sig; s.innerHTML = "";
+    ds.forEach(d => s.add(new Option(`${dayLabel(d)} (${days[d]})`, d)));
+    s.add(new Option(`All dates (${Object.values(days).reduce((a,b)=>a+b,0)})`, "all"));
+    s.value = cur && [...s.options].some(o => o.value === cur) ? cur : (ds[0] || "all");
+  }
   function setRows(rows){
+    lastRows = rows;
+    parse(rows); fillEvents();
     const {list, d} = parse(rows);
+    const ev = $("evento").value;
+    if(ev !== curEvent){ curEvent = ev; past = new Set(ls.get("sorteo.past." + ev) || []); winners = []; $("winWrap").hidden = true; $("drum").classList.remove("win"); $("drumName").textContent = "Ready to draw"; first = true; }
     const changed = first || list.length !== people.length || d !== dupes; first = false;
     people = list; dupes = d;
     $("upd").innerHTML = `<span class="dot"></span>updated ${new Date().toLocaleTimeString("en-US",{timeZone:"America/New_York",timeZoneName:"short",hour:"2-digit",minute:"2-digit",second:"2-digit"})}`;
@@ -221,6 +244,7 @@ textarea{position:absolute;left:-9999px}
     $("toggle").disabled = false;
   });
   $("exclude").addEventListener("change", render);
+  $("evento").addEventListener("change", () => { if(!drawing) setRows(lastRows); });
 
   /* Sorteo */
   function rnd(n){ const a = new Uint32Array(1), lim = Math.floor(0xFFFFFFFF/n)*n; let v; do{ crypto.getRandomValues(a); v = a[0]; } while(v >= lim); return v % n; }
@@ -253,7 +277,7 @@ textarea{position:absolute;left:-9999px}
       if(k < picked.length - 1) await wait(reduce ? 300 : 1400);
     }
     winners = picked.map((p,i) => ({...p, rol: i < nW ? `Winner ${i+1}` : `Alternate ${i-nW+1}`}));
-    picked.forEach(p => past.add(p.key)); ls.set("sorteo.past", [...past]);
+    picked.forEach(p => past.add(p.key)); ls.set("sorteo.past." + curEvent, [...past]);
     const ul = $("winners"); ul.innerHTML = "";
     winners.forEach(w => {
       const li = document.createElement("li");
@@ -262,7 +286,7 @@ textarea{position:absolute;left:-9999px}
       ul.appendChild(li);
     });
     const stamp = new Date().toLocaleString("en-US",{timeZone:"America/New_York",timeZoneName:"short",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit"});
-    $("copyWin").dataset.text = `Raffle ${stamp} — ${pool.length} entries\n` + winners.map(w => `${w.rol}: ${w.nombre}${w.mail ? " | " + w.mail : ""}`).join("\n");
+    $("copyWin").dataset.text = `Raffle ${stamp} — ${$("evento").selectedOptions[0].text.replace(/ [(][0-9]+[)]$/,"")} — ${pool.length} entries\n` + winners.map(w => `${w.rol}: ${w.nombre}${w.mail ? " | " + w.mail : ""}`).join("\n");
     $("winWrap").hidden = false;
     }catch(e){ showErr(e); }
     drawing = false; render();
@@ -275,7 +299,7 @@ textarea{position:absolute;left:-9999px}
     $("copyWin").textContent = "Copied"; setTimeout(() => $("copyWin").textContent = "Copy results", 2000);
   });
   $("resetWin").addEventListener("click", () => {
-    past = new Set(); winners = []; ls.set("sorteo.past", []);
+    past = new Set(); winners = []; ls.set("sorteo.past." + curEvent, []);
     $("winWrap").hidden = true; $("drum").classList.remove("win");
     $("drumName").textContent = "Ready to draw"; render();
   });
