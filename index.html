@@ -104,11 +104,11 @@ textarea{position:absolute;left:-9999px}
         <input type="number" id="suplentes" min="0" value="0">
         <button class="primary" id="draw" disabled>Draw</button>
       </div>
-      <label class="check"><input type="checkbox" id="exclude" checked> Don’t draw past winners again</label>
+      <div class="row" style="justify-content:space-between"><label class="check"><input type="checkbox" id="exclude" checked> Don’t draw past winners again</label><button id="resetWin" hidden>Reset winners</button></div>
       <div id="winWrap" hidden style="display:flex;flex-direction:column;gap:10px">
         <h3>Results</h3>
         <ul class="winners" id="winners"></ul>
-        <div class="row"><button id="copyWin">Copy results</button><button id="resetWin">Reset winners</button></div>
+        <div class="row"><button id="copyWin">Copy results</button></div>
       </div>
     </div>
 
@@ -155,10 +155,20 @@ textarea{position:absolute;left:-9999px}
 
   /* Participantes */
   const norm = s => (s||"").toString().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
-  const col = (h, keys) => h.findIndex(x => keys.some(k => norm(x).includes(k)));
+  let ROWS = [];
+  const col = (h, keys) => {
+    let best = -1, bestN = -1;
+    h.forEach((x, i) => {
+      if(!keys.some(k => norm(x).includes(k))) return;
+      const n = ROWS.slice(1).filter(r => (r[i]||"").trim()).length;
+      if(n > bestN){ best = i; bestN = n; }
+    });
+    return best;
+  };
   function parse(rows){
     rows = (rows||[]).filter(r => r.some(c => (c||"").trim()));
     if(rows.length < 2) return {list:[], d:0};
+    ROWS = rows;
     const h = rows[0];
     let iN = col(h,["nombre","name"]), iA = col(h,["apellido","surname"]), iT = col(h,["tel","cel","whats","movil","phone"]), iM = col(h,["mail","correo"]);
     if(iA === iN) iA = -1;
@@ -193,7 +203,8 @@ textarea{position:absolute;left:-9999px}
     });
     if(!drawing){
       $("draw").disabled = !eligible().length;
-      if(!$("drum").classList.contains("win")) $("drumMeta").textContent = people.length ? `${eligible().length} in the draw` : "waiting for entries";
+      if(!$("drum").classList.contains("win")) $("drumMeta").textContent = !people.length ? "waiting for entries" : eligible().length ? `${eligible().length} in the draw` : "everyone already won: tap Reset winners or untick the box";
+      $("resetWin").hidden = !past.size;
     }
   }
   function setEstado(a){
@@ -225,6 +236,7 @@ textarea{position:absolute;left:-9999px}
     for(let i=0;i<total;i++){ const j = i + rnd(arr.length - i); [arr[i],arr[j]] = [arr[j],arr[i]]; }
     const picked = arr.slice(0, total);
     drawing = true; $("draw").disabled = true;
+    try{
     const d = $("drum");
     for(let k=0;k<picked.length;k++){
       d.classList.remove("win"); d.classList.add("spin");
@@ -249,9 +261,10 @@ textarea{position:absolute;left:-9999px}
       li.children[0].textContent = w.rol; li.children[1].textContent = w.nombre;
       ul.appendChild(li);
     });
-    const stamp = new Date().toLocaleString("en-US",{timeZone:"America/New_York",timeZoneName:"short",dateStyle:"short",timeStyle:"short"});
-    $("copyWin").dataset.text = `Raffle ${stamp} — ${pool.length} entries\n` + winners.map(w => `${w.rol}: ${w.nombre}`).join("\n");
+    const stamp = new Date().toLocaleString("en-US",{timeZone:"America/New_York",timeZoneName:"short",year:"numeric",month:"numeric",day:"numeric",hour:"numeric",minute:"2-digit"});
+    $("copyWin").dataset.text = `Raffle ${stamp} — ${pool.length} entries\n` + winners.map(w => `${w.rol}: ${w.nombre}${w.mail ? " | " + w.mail : ""}`).join("\n");
     $("winWrap").hidden = false;
+    }catch(e){ showErr(e); }
     drawing = false; render();
   });
 
